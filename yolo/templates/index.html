@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>YOLOv8 Defect Detection</title>
+    <style>
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(45deg, #4015c1, #de4579, #1e056a);
+      } 
+        #result {
+            margin-top: 2rem;
+        }
+        img {
+            max-width: 80%;
+            height: auto;
+            border: 2px solid #444;
+            margin-top: 1rem;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+        }
+
+            /* Container styles */
+        div[name="container"] {
+            width: 80%;
+            height: 107vh; /* 60% of viewport height */
+            display: flex;
+            gap: 20px;
+            align-items: center;   /* vertically center images */
+            justify-content: center; /* horizontally center container contents */
+            margin: 0 auto;         /* center container on page */
+            border: 2px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        /* Each image wrapper takes 50% of container width */
+        div[name="container"] > div {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Images fill their half of the container */
+        #input-img, #output-img {
+            width: 100%;
+            height: 700px;
+            object-fit: contain; /* preserves aspect ratio and fits within container */
+            border: 1px solid #ccc;
+        }
+
+        #tab{
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+            #chart-container {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        gap: 20px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #chart-container canvas {
+        flex: 1 1 50%;
+        max-width: 500px;
+        max-height: 500px;
+        width: 100%;
+        height: 100%;
+        border: 1px solid #ccc;
+        background-color: #fff;
+    }
+
+    #dwnl{
+        margin-top: 25px;
+        margin-bottom: 25px;
+        cursor: pointer;
+    }
+
+    #prd{
+        margin-top: 25px;
+        margin-bottom: 25px;
+        padding-left: 35px;
+        padding-right: 35px;
+        cursor: pointer;
+        background-color: black; 
+        color: white;
+    }
+    #prd:hover{
+        transition: ease-in;
+        background-color: #620228;
+    }
+    #imageInput{
+        border: 1px solid black;
+        cursor: pointer;
+    }
+    .logo{
+        width: 100px;
+         border-radius: 50px;
+    }
+    .rv{
+        position: absolute;
+        left: 35px;
+        top: 20px;
+    }
+    .csb{
+        position: absolute;
+        right: 35px;
+        top: 20px;
+    }
+    #tl{
+        margin-top: 60px;
+        width: 80%;
+        margin-left: 140px;
+        margin-bottom: 65px;
+    }
+
+
+    
+    #team {
+    width: 500px;
+    height: 500px;
+    margin: 40px auto; /* centers horizontally and adds vertical space */
+    overflow: auto; /* enables scroll if content overflows */
+    /* background-color: #f0f0f0; optional background for visibility */
+    /* border-radius: 10px; */
+    /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); */
+    }
+
+    #team table {
+        width: 100%;
+        height: 50%;
+        border-collapse: collapse;
+        text-align: center;
+    }
+
+    #team th,
+    #team td {
+        border: 2px solid rgb(0, 0, 0);
+        padding: 8px;
+        font-size: 14px;
+        color: #000000;
+        font-weight: bold;
+        /* background-color: #ffffff; white background for cells */
+    }
+
+    #team th {
+        /* background-color: #337ab7; */
+        /* color: white; */
+    }
+    </style>
+</head>
+<body>
+
+<img class="logo rv" src="/static/rv.png" alt="img"/>
+<img class="logo csb" src="/static/csb.png" />
+
+<h1 id="tl" style="color:rgb(43, 21, 21);">Studies on use of Al for replacing subjective analysis of seriplane test with objective analysis</h1>
+
+<input type="file" id="imageInput" accept="image/*">
+<br>
+<button id="prd" onclick="p(event)">Predict</button>
+
+<div id="team">
+    <table>
+        <thead>
+            <tr>
+                <th>Program</th>
+                <th>USN</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ECE</td>
+                <td>1RV23EC413</td>
+                <td>SUJAL AMBEWADI</td>
+            </tr>
+            <tr>
+                <td>ECE</td>
+                <td>1RV23EC411</td>
+                <td>SHREYASH MITHARE</td>
+            </tr>
+            <tr>
+                <td>CSE</td>
+                <td>1RV23CS410</td>
+                <td>NAGAPRASAD NAIK</td>
+            </tr>
+            <tr>
+                <td>CSE</td>
+                <td>1RV23CS406</td>
+                <td>MANJU SHREE YADAV D</td>
+            </tr>
+            <tr>
+                <td>ME</td>
+                <td>1RV22ME125</td>
+                <td>VRUNDA R</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 style="text-align: center; margin-top: 40px; margin-bottom: 10px;">Internal Guide</h2>
+    <div style="text-align: center; font-weight: bold;">
+        Dr. VEENA DEVI S V<br>
+        Associate Professor<br>
+        Electronics and Communication Engineering (ECE)
+    </div>
+</div>
+
+
+<div id="result"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div id="chart-container">
+    <canvas style="opacity: 0;" id="barChart"></canvas>
+    <canvas style="opacity: 0;" id="pieChart"></canvas>
+</div>
+
+<script>
+
+let barChartInstance = null;
+let pieChartInstance = null;
+
+function drawCharts(data) {
+    const labels = [];
+    const values = [];
+
+    // Flatten and collect data
+    for (let category in data) {
+        if (typeof data[category] === 'object' && category !== 'output_image') {
+            for (let type in data[category]) {
+                labels.push(`${category} - ${type}`);
+                values.push(data[category][type]);
+            }
+        } else if (category !== 'output_image') {
+            labels.push(category);
+            values.push(data[category]);
+        }
+    }
+
+    // Destroy existing charts before creating new ones
+    if (barChartInstance) {
+        barChartInstance.destroy();
+    }
+    if (pieChartInstance) {
+        pieChartInstance.destroy();
+    }
+
+    // Bar Chart
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    barChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Defect Counts',
+                data: values,
+                backgroundColor: 'rgba(54, 162, 235, 0.7)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // Pie Chart
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    pieChartInstance = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                    '#9966FF', '#FF9F40', '#66FF66'
+                ]
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+}
+
+
+function downloadExcel() {
+    const tableData = [];
+    const rows = document.querySelectorAll("table tbody tr");
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        const rowData = {
+            Category: cells[0].innerText,
+            Type: cells[1].innerText,
+            Count: parseInt(cells[2].innerText)
+        };
+        tableData.push(rowData);
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(tableData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "DefectSummary");
+    XLSX.writeFile(workbook, "defect_summary.xlsx");
+}
+
+
+function generateDefectTable(data) {
+    let table = `<table id="tbl" border="1" cellpadding="8" cellspacing="0" style="margin-top: 10px; border-collapse: collapse; ">
+                    <thead>
+                        <tr>
+                            <th style="padding:25px">Category</th>
+                            <th>Type</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+    for (let key in data) {
+        if (typeof data[key] === 'object' && data[key] !== null) {
+            // Nested object (e.g., Cleanliness)
+            for (let subKey in data[key]) {
+                table += `
+                    <tr>
+                        <td style="padding:25px; padding-left:80px; padding-right:80px;">${key}</td>
+                        <td style="padding:25px; padding-left:80px; padding-right:80px;">${subKey}</td>
+                        <td style="padding:25px; padding-left:80px; padding-right:80px;">${data[key][subKey]}</td>
+                    </tr>   
+                `;
+            }
+        } else if (key !== 'output_image') {
+            // Single value (e.g., Total)
+            table += `
+                <tr>
+                    <td style="padding:25px; padding-left:80px; padding-right:80px;">${key}</td>
+                    <td style="padding:25px; padding-left:80px; padding-right:80px;">-</td>
+                    <td style="padding:25px; padding-left:80px; padding-right:80px;">${data[key]}</td>
+                </tr>
+            `;
+        }
+    }
+
+    table += `</tbody></table>`;
+    return table;
+}
+
+    function changeBackground() {
+        document.body.style.background = "black";
+        document.getElementById("barChart").style.opacity = 1;
+        document.getElementById("pieChart").style.opacity = 1;
+        document.getElementById("tl").style.color = "white";
+        document.getElementById("imageInput").style.border = "1px solid white";
+        document.getElementById("tbl").style.border = "1px solid white";
+        document.getElementById("imageInput").style.color = "white";
+        // document.getElementById("team").style.visibility= "hidden";
+        document.getElementById("prd").style.background= "#3a5bff";
+        document.getElementById("prd").style.color= "white";
+        document.getElementById("tbl").style.color= "white";
+        document.getElementById("dwnl").style.background= "#3a5bff";
+        document.getElementById("dwnl").style.color= "white";
+        // document.getElementById("input-img").style.color= "white";
+        // document.getElementById("output-img").style.color= "white";
+
+        }
+
+    function p(event) {
+        event.preventDefault(); // ⛔ Prevent page reload
+        // reloadPage();
+        uploadImage();
+    };
+
+    function reloadPage() {
+    location.reload();
+    }
+
+    async function uploadImage() {
+
+
+        const tableDiv = document.getElementById("team");
+        if (tableDiv) {
+            tableDiv.remove();  // Removes the element from DOM
+        }
+
+
+        const input = document.getElementById('imageInput');
+        const file = input.files[0];
+
+        if (!file) {
+            alert("Please select an image.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const response = await fetch('http://localhost:5001/predict', {
+            method: 'POST',
+            body: formData,
+            cache: 'no-store'
+        });
+
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = "Processing...";
+
+        try {
+            const data = await response.json();
+            const timestamp = new Date().getTime();
+            const inputUrl = `static/input/input.jpg?t=${timestamp}`; 
+            const imageUrl = `${data.output_image}?t=${timestamp}`; 
+            if (response.ok) {
+    const timestamp = new Date().getTime(); // Cache-busting
+    const count = 0;
+    resultDiv.innerHTML = `
+        <div name="container" style="display: flex; gap: 20px; align-items: flex-start;">
+            <div>
+                <h3 style="color:white;">Input Image</h3>
+                <img src="${inputUrl}?t=${timestamp}" id="input-img" style="max-width: 300px; border: 1px solid #ccc;" />
+            </div>
+            <div>
+                <h3 style="color:white;">Output Image</h3>
+                <img src="${imageUrl}?t=${timestamp}" id="output-img" style="max-width: 300px; border: 1px solid #ccc;" />
+            </div>
+        </div>
+
+        <h3 id="d" style="color:white; margin-top:50px; margin-bottom:25px;">Defect Summary</h3>
+        <div id="tab">
+        ${generateDefectTable(data)}
+        </div>
+        <button id="dwnl" onclick="downloadExcel()">Download as Excel</button>
+        <h3 style="color:white;">Charts</h3>
+        `;
+        drawCharts(data);
+    }
+    else {
+            resultDiv.innerHTML = `<span style="color:red;">Error: ${data.error}</span>`;
+        }
+    } catch (err) {
+        resultDiv.innerHTML = `<span style="color:red;">Failed to parse response</span>`;
+    }
+    changeBackground();
+}
+
+</script>
+</body>
+</html>
