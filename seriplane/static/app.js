@@ -254,6 +254,7 @@ function renderTable(data) {
     }
 }
 
+
 function getTableCSV() {
     const table = document.getElementById("csvTable");
     let csv = [];

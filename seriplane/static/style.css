@@ -81,44 +81,62 @@ th {
 }
 
 /* ================= PRINT MODE ================= */
+/* ================= PRINT MODE ================= */
 @media print {
+
+    /* Reset everything */
+    * {
+        overflow: visible !important;
+    }
+
     body {
         background: white;
     }
 
+    /* Hide UI controls */
     .title-bar,
     .tabs,
-    .print-area,
+    #btnPrint,
     #status {
         display: none !important;
     }
 
-    .window {
-        border: none;
-        width: 100%;
+    /* Expand containers */
+    .window,
+    .content,
+    .main-layout,
+    .table-area {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
     }
 
-    .content {
-        padding: 0;
-        background: white;
-    }
-
+    /* Table print optimization */
     table {
         width: 100%;
-        border: 1px solid black;
+        border-collapse: collapse;
+        page-break-inside: auto;
+    }
+
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
     }
 
     th, td {
         border: 1px solid black;
         padding: 6px;
         font-size: 12px;
+        white-space: normal;
     }
 
     th {
         background-color: #f0f0f0 !important;
         -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }
+
 
 /* ================= RESPONSIVE MEDIA QUERIES ================= */
 

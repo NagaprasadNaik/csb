@@ -60,7 +60,7 @@ def main():
     run_step(
         [
             sys.executable,
-            "evenness.py"
+            "even.py"
         ]
     )
 
@@ -68,7 +68,7 @@ def main():
     run_step(
         [
             sys.executable,
-            "neatness.py"
+            "clean_neat.py"
         ]
     )
 
