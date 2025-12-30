@@ -13,70 +13,93 @@ app = Flask(__name__, static_folder="static")
 def home():
     return app.send_static_file("index.html")
 
-from datetime import datetime
-from flask import request, jsonify
-import os
+
+import shutil
+import re
 
 @app.route("/home", methods=["POST"])
 def home_reset():
     data = request.json or {}
 
-    # ---------------- SAVE LOGS ----------------
-    os.makedirs("logs", exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Save Evenness CSV
-    if data.get("evenness", "").strip():
-        with open(f"logs/evenness_{timestamp}.csv", "w") as f:
-            f.write(data["evenness"])
-
-    # Save Neatness & Cleanness CSV
-    if data.get("neatness", "").strip():
-        with open(f"logs/neatness_cleanness_{timestamp}.csv", "w") as f:
-            f.write(data["neatness"])
-
-    # ---------------- DELETE RESULT CSVs ----------------
-    for fpath in [
-        os.path.join(RESULT_DIR, "evenness.csv"),
-        os.path.join(RESULT_DIR, "neatness_cleanness.csv")
-    ]:
-        if os.path.exists(fpath):
-            os.remove(fpath)
-
-    # ---------------- DELETE PREPROCESSED IMAGES ----------------
+    # ---------------- BASE DIRECTORIES ----------------
+    LOGS_DIR = os.path.join(BASE_DIR, "logs")
+    RESULT_DIR = os.path.join(BASE_DIR, "results")
     PREPROCESSED_DIR = os.path.join(BASE_DIR, "preprocessed")
 
+    os.makedirs(LOGS_DIR, exist_ok=True)
+
+    # ---------------- FIND NEXT PANEL NUMBER ----------------
+    panel_numbers = []
+
+    for name in os.listdir(LOGS_DIR):
+        match = re.match(r"panel(\d+)", name)
+        if match:
+            panel_numbers.append(int(match.group(1)))
+
+    next_panel = max(panel_numbers) + 1 if panel_numbers else 1
+
+    if next_panel > 100:
+        return jsonify({"error": "Maximum panel limit reached"}), 400
+
+    PANEL_DIR = os.path.join(LOGS_DIR, f"panel{next_panel}")
+    os.makedirs(PANEL_DIR)
+
+    # ---------------- SAVE UPDATED CSVs ----------------
+    if data.get("evenness", "").strip():
+        with open(os.path.join(PANEL_DIR, "evenness.csv"), "w") as f:
+            f.write(data["evenness"])
+
+    if data.get("neatness", "").strip():
+        with open(os.path.join(PANEL_DIR, "neatness_cleanness.csv"), "w") as f:
+            f.write(data["neatness"])
+
+    # ---------------- COPY RESULT SUBFOLDERS ----------------
+    for sub in ["evenness", "neatness"]:
+        src = os.path.join(RESULT_DIR, sub)
+        dst = os.path.join(PANEL_DIR, sub)
+
+        if os.path.exists(src):
+            shutil.copytree(src, dst)
+
+    # ---------------- CLEAN RESULT CSVs ----------------
+    for f in ["evenness.csv", "neatness_cleanness.csv"]:
+        path = os.path.join(RESULT_DIR, f)
+        if os.path.exists(path):
+            os.remove(path)
+
+    # ---------------- CLEAN PREPROCESSED IMAGES ----------------
     if os.path.exists(PREPROCESSED_DIR):
-        for filename in os.listdir(PREPROCESSED_DIR):
-            file_path = os.path.join(PREPROCESSED_DIR, filename)
+        for file in os.listdir(PREPROCESSED_DIR):
+            file_path = os.path.join(PREPROCESSED_DIR, file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
+    # ---------------- DELETE EVENNESS IMAGES ----------------
+    EVENNESS_DIR = os.path.join(BASE_DIR, "results/evenness")
+
+    if os.path.exists(EVENNESS_DIR):
+        for filename in os.listdir(EVENNESS_DIR):
+            file_path = os.path.join(EVENNESS_DIR, filename)
 
             # delete only files (images)
             if os.path.isfile(file_path):
                 os.remove(file_path)
 
-    # ---------------- DELETE EVENNESS IMAGES ----------------
-    # PREPROCESSED_DIR = os.path.join(BASE_DIR, "results/evenness")
-
-    # if os.path.exists(PREPROCESSED_DIR):
-    #     for filename in os.listdir(PREPROCESSED_DIR):
-    #         file_path = os.path.join(PREPROCESSED_DIR, filename)
-
-    #         # delete only files (images)
-    #         if os.path.isfile(file_path):
-    #             os.remove(file_path)
-
 # ---------------- DELETE NEATNESS IMAGES ----------------
-    # PREPROCESSED_DIR = os.path.join(BASE_DIR, "results/neatness")
+    NEATNESS_DIR = os.path.join(BASE_DIR, "results/neatness")
 
-    # if os.path.exists(PREPROCESSED_DIR):
-    #     for filename in os.listdir(PREPROCESSED_DIR):
-    #         file_path = os.path.join(PREPROCESSED_DIR, filename)
+    if os.path.exists(NEATNESS_DIR):
+        for filename in os.listdir(NEATNESS_DIR):
+            file_path = os.path.join(NEATNESS_DIR, filename)
 
-    #         # delete only files (images)
-    #         if os.path.isfile(file_path):
-    #             os.remove(file_path)
+            # delete only files (images)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
 
-    return jsonify({"status": "saved_all_and_reset"})
+    return jsonify({
+        "status": "panel_saved",
+        "panel": f"panel{next_panel}"
+    })
 
 
 @app.route("/execute", methods=["POST"])
